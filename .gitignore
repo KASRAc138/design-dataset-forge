@@ -1,0 +1,16 @@
+__pycache__/
+*.pyc
+venv/
+.venv/
+.env
+*.log
+*.db
+*.session
+*.session-journal
+node_modules/
+out/
+dist/
+build/
+*.exe
+*.spec
+output/
