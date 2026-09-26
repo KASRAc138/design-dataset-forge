@@ -81,18 +81,7 @@ def _ensure_simhash():
 # ===========================================================================
 
 class ChunkAnalyzer:
-    """
-    Extracts concrete content elements from a chunk so prompts can reference
-    SPECIFIC material rather than asking generic questions.
-
-    Anchor types extracted:
-      - key_terms: Capitalized technical phrases (e.g., "Universal Design")
-      - definitions: "X is Y" / "X refers to Y" patterns
-      - comparisons: A vs B patterns, contrast words
-      - lists: Enumerated or bulleted items
-      - metrics: Numbers, percentages, dimensions
-      - named_entities: Proper names, product names, author names
-    """
+    """Extracts concrete content elements from a chunk so prompts can reference"""
 
     # Patterns for definition extraction
     _DEF_PATTERNS = [
@@ -246,10 +235,7 @@ class ChunkAnalyzer:
 # ===========================================================================
 
 class TaskBalancer:
-    """
-    Tracks per-task counts and dynamically adjusts selection probability
-    to prevent any single task type from dominating the dataset.
-    """
+    """Tracks per-task counts and dynamically adjusts selection probability"""
 
     # Target distribution: tasks that should appear more/less frequently
     # Weights are relative - higher = more frequent. 1.0 = baseline.
@@ -278,10 +264,7 @@ class TaskBalancer:
         self.total_generated += 1
 
     def select_tasks(self, router_tasks, max_tasks=2):
-        """
-        Given tasks from the router, filter/reorder to improve balance.
-        Returns a list of 1-max_tasks task names.
-        """
+        """Given tasks from the router, filter/reorder to improve balance."""
         if not router_tasks:
             return [self.task_types[0]] if self.task_types else []
 
@@ -319,12 +302,9 @@ class TaskBalancer:
 # ===========================================================================
 
 class ResponseCleaner:
-    """
-    Post-processes assistant responses to remove robotic boilerplate
-    and detect incomplete/truncated outputs.
-    """
+    """Post-processes assistant responses to remove robotic boilerplate"""
 
-    # Phrases that add no value and mark LLM-generated text
+    # filler phrases to strip
     BOILERPLATE_OPENERS = [
         r"^Based on the (?:text|provided text|excerpt|passage|chunk|source|document)[,\s]",
         r"^According to the (?:text|provided text|excerpt|passage|chunk|source|document)[,\s]",
@@ -358,10 +338,7 @@ class ResponseCleaner:
 
     @classmethod
     def is_truncated(cls, text, min_length=30):
-        """
-        Detect if response appears truncated (cut off mid-sentence or mid-word).
-        Returns (is_truncated, reason).
-        """
+        """Detect if response appears truncated (cut off mid-sentence or mid-word)."""
         if len(text.strip()) < min_length:
             return False, "too_short_to_check"
 
@@ -622,10 +599,7 @@ def _is_noise(paragraph):
 
 
 def smart_chunk(text, target_words=250, max_words=450, min_chunk_words=15):
-    """
-    Split text into coherent multi-paragraph chunks.
-    Preserves [PAGE_N] markers for provenance tracking.
-    """
+    """Split text into coherent multi-paragraph chunks."""
     if not text or not text.strip():
         return []
 
@@ -779,10 +753,7 @@ def semantic_near_duplicate(text_a, text_b, threshold=3):
 
 
 class DedupTracker:
-    """
-    Tracks recent texts for deduplication. Supports both exact and semantic dedup.
-    Also detects near-duplicate PROMPTS (same intent, different wording).
-    """
+    """Tracks recent texts for deduplication."""
 
     def __init__(self, max_recent=50, semantic=True):
         self.max_recent = max_recent
@@ -833,10 +804,7 @@ class DedupTracker:
 # ===========================================================================
 
 class ExportManager:
-    """
-    Handles formatting and exporting the dataset in multiple formats
-    with optional stratified train/validation/test splitting.
-    """
+    """Handles formatting and exporting the dataset in multiple formats"""
 
     @staticmethod
     def parse_pair(text):
@@ -891,10 +859,7 @@ class ExportManager:
 
     @classmethod
     def stratified_split(cls, records, train=0.8, val=0.1, test=0.1):
-        """
-        Split records into train/val/test, stratified by task type.
-        Returns dict with "train", "validation", "test" keys.
-        """
+        """Split records into train/val/test, stratified by task type."""
         assert abs(train + val + test - 1.0) < 0.01, "Split ratios must sum to 1.0"
 
         # Group by task
@@ -931,10 +896,7 @@ class ExportManager:
 
     @classmethod
     def export_all(cls, records, base_path, system_msg=None, do_split=True):
-        """
-        Export records in all formats. If do_split, creates train/val/test files.
-        Returns a report dict with file paths and counts.
-        """
+        """Export records in all formats."""
         report = {"files": [], "counts": {}}
         base_dir = os.path.dirname(os.path.abspath(base_path))
         base_name = os.path.splitext(os.path.basename(base_path))[0]
@@ -993,10 +955,7 @@ class ExportManager:
 # ===========================================================================
 
 class QualityTracker:
-    """
-    Tracks quality scores across the dataset and produces a report.
-    Composite score range: 0-6 (sum of 3 rubric dimensions × 0-2).
-    """
+    """Tracks quality scores across the dataset and produces a report."""
 
     def __init__(self, min_composite_score=3):
         self.scores = []  # list of composite scores
@@ -1077,10 +1036,7 @@ class QualityTracker:
 # ===========================================================================
 
 def gather_chunks(cfg, log_fn):
-    """
-    Extract and chunk all input files + pasted text.
-    Returns list of (source_name, chunk_text, chunk_hash, pages, source_meta) tuples.
-    """
+    """Extract and chunk all input files + pasted text."""
     combined = []
     for path in cfg["input_files"]:
         try:
@@ -1130,7 +1086,7 @@ def gather_chunks(cfg, log_fn):
 
 
 # ===========================================================================
-# 13. ENHANCED PIPELINE - integrates all v2 components
+# 13. pipeline
 # ===========================================================================
 
 def run_pipeline(app, cfg):
@@ -1148,7 +1104,6 @@ def run_pipeline(app, cfg):
     if cfg["model_a"] == cfg["model_b"]:
         log("Note: Generator A and B are the same - cross-validation is self-validation.")
 
-    # Initialize v2 components
     if cfg.get("semantic_dedup", False):
         _ensure_simhash()
         log("Semantic deduplication enabled (simhash)")
@@ -1412,7 +1367,7 @@ def run_pipeline(app, cfg):
 
 
 # ===========================================================================
-# 14. GUI - Enhanced with v2 controls
+# 14. GUI
 # ===========================================================================
 
 TASK_TYPES = [
@@ -1807,11 +1762,11 @@ class App:
             "max_words": self.max_words_var.get(),
             "temperature": self.temperature_var.get(),
             "top_p": self.top_p_var.get(),
-            # v2 quality controls
+            # quality controls
             "min_quality_score": self.min_quality_var.get(),
             "reject_truncated": self.reject_truncated_var.get(),
             "min_per_task": self.min_per_task_var.get(),
-            # v2 export controls
+            # export controls
             "do_split": self.do_split_var.get(),
             "export_format": self.export_format_var.get(),
         }

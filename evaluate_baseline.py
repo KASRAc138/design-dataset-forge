@@ -1,13 +1,4 @@
-"""
-Zero-shot baseline for a model on the test split, run before fine-tuning.
-
-Usage:
-    python evaluate_baseline.py --dataset dataset_test_sharegpt.jsonl --model qwen3:8b
-    python evaluate_baseline.py --dataset dataset_test_alpaca.jsonl --model gemma3:12b --format alpaca
-
-Outputs:
-    baseline_report.json  -  per-task metrics, overall scores, comparison table
-"""
+"""Zero-shot baseline for a model on the test split, run before fine-tuning."""
 
 import argparse
 import json
@@ -89,10 +80,7 @@ def extract_prompt_response(record, fmt="sharegpt"):
 
 
 def evaluate_response(prediction, reference, task):
-    """
-    Compute evaluation metrics for a single prediction.
-    Returns dict with metrics (all 0-1 scaled where applicable).
-    """
+    """Compute evaluation metrics for a single prediction."""
     metrics = {}
 
     # 1. Response length ratio (pred vs reference)

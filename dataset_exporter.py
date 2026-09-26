@@ -1,23 +1,4 @@
-"""
-Dataset Forge v1 - multi-model pipeline (router / generator / validator)
-
-PIPELINE (per chunk):
-  1. ROUTER   - small/fast model decides if a chunk is "usable" and which
-                task type(s) fit it (summary / qa / explanation / application).
-                Filters junk (references, headers, fragments) before any
-                expensive generation happens.
-  2. GENERATOR - alternates between your two "heavy" models per chunk.
-                Produces ONE {"text": "User: ...\nAssistant: ..."} pair per
-                task type, using the FULL chunk as context (no sentence-level
-                pairing, real instructions, complete answers).
-  3. VALIDATOR - the OTHER heavy model cross-checks the pair for grounding
-                (no hallucinated facts) and completeness. Failing pairs are
-                discarded.
-
-Also: smart paragraph-merging chunker (de-hyphenates PDF wraps, drops
-headers/page numbers/references), rolling near-duplicate filter, multi-file
-+ pasted-text input, live log/preview, pause/stop, dynamic Ollama model list.
-"""
+"""Dataset Forge v1 - multi-model pipeline (router / generator / validator)"""
 
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk, scrolledtext
@@ -115,10 +96,10 @@ _NOISE_PATTERNS = [
 
 def _is_noise(paragraph):
     p = paragraph.strip()
-    # Lowered from 30 to 15 to allow shorter, messy, or conversational fragments
+    # low enough to keep short/messy fragments
     if len(p) < 15:
         return True
-    # Raised from 0.3 to 0.45 to preserve data-heavy tables or imperfect OCR texts
+    # high enough to keep tables and noisy OCR text
     digit_ratio = sum(c.isdigit() for c in p) / max(len(p), 1)
     if digit_ratio > 0.45:
         return True
@@ -129,11 +110,7 @@ def _is_noise(paragraph):
 
 
 def smart_chunk(text, target_words=250, max_words=450, min_chunk_words=15):
-    """
-    Split *text* into coherent multi-paragraph chunks.
-    Paragraphs are joined with double newlines so downstream tasks can still
-    see the paragraph boundaries (useful for citation / multi-section work).
-    """
+    """Split *text* into coherent multi-paragraph chunks."""
     if not text or not text.strip():
         return []
 
@@ -196,8 +173,7 @@ _FENCE_RE = re.compile(r"^```[a-zA-Z0-9]*\n?|```\s*$")
 
 
 def clean_json_response(raw):
-    """Strip <think>...</think> blocks and markdown code fences that some
-    reasoning models (e.g. qwen3) emit even when format=json is requested."""
+    """Strip <think>...</think> blocks and markdown code fences that some"""
     if not raw:
         return raw
     raw = _THINK_RE.sub("", raw).strip()
@@ -206,10 +182,7 @@ def clean_json_response(raw):
 
 
 def ollama_generate(model, prompt, system, temperature=0.2, top_p=0.9, timeout=300, retries=2):
-    """
-    Generate text via Ollama with automatic retry on transient failures.
-    Retries use a small back-off to avoid hammering a cold Ollama instance.
-    """
+    """Generate text via Ollama with automatic retry on transient failures."""
     payload = {
         "model": model,
         "prompt": prompt,
@@ -374,11 +347,7 @@ def _tokens_to_features(tokens):
     return features
 
 def semantic_near_duplicate(text_a, text_b, threshold=3):
-    """
-    Near-duplicate detection using simhash Hamming distance if available,
-    otherwise falls back to difflib SequenceMatcher.
-    threshold=3 Hamming distance (~0.85 similarity) is the default cut-off.
-    """
+    """Near-duplicate detection using simhash Hamming distance if available,"""
     if SIMHASH_AVAILABLE and 'Simhash' in globals():
         features_a = _tokens_to_features(_get_tokens(text_a))
         features_b = _tokens_to_features(_get_tokens(text_b))
