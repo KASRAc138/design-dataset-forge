@@ -2,6 +2,8 @@
 
 Desktop tool that turns design documents (PDF, DOCX, TXT) into instruction-tuning datasets for fine-tuning a small model on industrial design. Runs fully local on Ollama.
 
+![Dataset Forge](docs/screenshot.png)
+
 ## Pipeline
 
 For each chunk of text:
